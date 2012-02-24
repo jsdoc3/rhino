@@ -2531,6 +2531,14 @@ public class Parser
                   // Assign the line number for the function call to where
                   // the paren appeared, not where the name expression started.
                   f.setLineno(lineno);
+                  // If there is a JSDoc, snag it.  This could be documentation
+                  // for a class factory function call -- e.g $.widget(...) from
+                  // jQuery UI or $.Model("MyClass").  And it's doubtful the 
+                  // comment was meant for anything else.
+                  String jsdoc = getAndResetJsDoc();
+                  if (jsdoc != null) {
+                	  f.setJsDoc(jsdoc);
+                  }
                   f.setLp(ts.tokenBeg - pos);
                   List<AstNode> args = argumentList();
                   if (args != null && args.size() > ARGC_LIMIT)

@@ -1,15 +1,20 @@
 Rhino 1.7R3 for JSDoc3
 ======================
-This fork of rhino is intended for use with JSDoc3 (https://github.com/micmath/jsdoc)
+This fork of Mozilla Rhino is intended for use with JSDoc 3 (https://github.com/jsdoc3/jsdoc). The
+fork incorporates the changes described below.
 
-The primary reason for the fork is to modify the behavior of the parser as it relates to JSDoc
-comment attachment.  Specifically, it is to attach comments to function calls when present.
+
+JSDoc Comment Attachment
+------------------------
+
+The fork modifies the behavior of the parser as it relates to JSDoc comment attachment.
+Specifically, the parser attaches comments to function calls when present.
+
 Traditionally, there may have not been much reason to do so since JSDoc comments are intended
-to be used to documentation generation and function calls do not provide any interfaces.
-
-However, there are many JavaScript frameworks that use a factory pattern that uses
-a function call to create classes.  For instance jQuery UI has a widget factory for
-creating plugins.  An example call might look something like:
+to be used to documentation generation and function calls do not provide any interfaces. However,
+there are many JavaScript frameworks that use a factory pattern that uses a function call to create
+classes.  For instance jQuery UI has a widget factory for creating plugins.  An example call might
+look something like:
 
     $.widget("ui.mywidget", {
         options: {
@@ -42,8 +47,30 @@ Of course, there are workarounds like assigning the prototype to a variable firs
 that, but, let's face it, no one really likes to document and making folks change their
 code just to do so would be asking a bit much.
 
-Sooooo, here we are.  This fork just makes a very small change that lets function call nodes pickup the 
-JSDoc comment if one is available when it gets created.  And the change is made to the 1.7R3
-release, because whatever's in the head of Rhino right now (1.7R4Pre) does not work with JSDoc3.
-I'll leave figuring that out to the JSDoc3 creator.  
 
+Node.js/CommonJS Package Support
+--------------------------------
+
+Although Rhino 1.7R3 included support for loading CommonJS modules, it did not recognize CommonJS/
+Node.js packages. This fork adds a new module provider with package support.
+
+For example, suppose the module directory is organized as follows:
+
+```
+|-- foo.js
+`-- bar
+|   |-- package.json
+|   `-- bar.js
+`-- baz
+    `-- index.js
+```
+
+In Rhino 1.7R3, if a JavaScript file requires the `foo`, `bar`, and `baz` modules, only the `foo`
+module will be loaded successfully.
+
+However, in this fork:
+
++ The `foo` module will still load successfully.
++ The `bar` module will load successfully as long as its `package.json` file includes a `main`
+property that is set to `./bar.js`.
++ The `baz` module will load successfully, since the new module provider finds its `index.js` file.

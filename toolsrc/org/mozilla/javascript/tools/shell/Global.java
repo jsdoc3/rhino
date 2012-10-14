@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import org.jsdoc.JsDocModuleProvider;
 import org.mozilla.javascript.*;
 import org.mozilla.javascript.commonjs.module.Require;
 import org.mozilla.javascript.commonjs.module.RequireBuilder;
@@ -150,7 +151,7 @@ public class Global extends ImporterTopLevel
         }
         rb.setModuleScriptProvider(
                 new SoftCachingModuleScriptProvider(
-                        new UrlModuleSourceProvider(uris, null)));
+                        new JsDocModuleProvider(uris, null)));
         Require require = rb.createRequire(cx, this);
         require.install(this);
         return require;

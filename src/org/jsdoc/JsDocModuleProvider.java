@@ -30,12 +30,9 @@ public class JsDocModuleProvider extends UrlModuleSourceProvider {
 	@Override
 	protected ModuleSource loadFromUri(URI uri, URI base, Object validator)
 		throws IOException, URISyntaxException {
-		String uriString = uri.toString();
-		if (!uriString.endsWith(JS_EXTENSION)) {
-			uriString += JS_EXTENSION;
-		}
+		URI uriWithExtension = addJsExtension(uri);
 
-		File jsFile = new File(new URI(uriString));
+		File jsFile = new File(uriWithExtension);
 		File packageFile = new File(new URI(uri.toString() + File.separator + PACKAGE_FILE));
 		File indexFile = new File(new URI(uri.toString() + File.separator + MODULE_INDEX));
 
@@ -77,11 +74,24 @@ public class JsDocModuleProvider extends UrlModuleSourceProvider {
 		NativeObject packageJson = parsePackageFile(packageFile);
 		String mainFile = (String) packageJson.get("main");
 		if (mainFile != null) {
+			mainFile = addJsExtension(mainFile);
 			return packageFile.toURI().resolve(mainFile);
 		} else {
 			return null;
 		}
-	} 
+	}
+
+	private URI addJsExtension(URI uri) throws URISyntaxException {
+		String str = uri.toString();
+		return new URI(addJsExtension(str));
+	}
+
+	private String addJsExtension(String str) {
+		if (!str.endsWith(JS_EXTENSION)) {
+			str += JS_EXTENSION;
+		}
+		return str;
+	}
 
 	private NativeObject parsePackageFile(File packageFile) throws IOException, ParseException {
 		String packageJson = SourceReader.readFileOrUrl(packageFile.toString(), true, "UTF-8").

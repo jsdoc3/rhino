@@ -20,6 +20,7 @@ import org.mozilla.javascript.tools.SourceReader;
  */
 public class JsDocModuleProvider extends UrlModuleSourceProvider {
 	private static final String JS_EXTENSION = ".js";
+	private static final String PATH_SEPARATOR = "/";
 	private static final String PACKAGE_FILE = "package.json";
 	private static final String MODULE_INDEX = "index" + JS_EXTENSION;
 
@@ -33,8 +34,8 @@ public class JsDocModuleProvider extends UrlModuleSourceProvider {
 		URI uriWithExtension = addJsExtension(uri);
 
 		File jsFile = new File(uriWithExtension);
-		File packageFile = new File(new URI(uri.toString() + File.separator + PACKAGE_FILE));
-		File indexFile = new File(new URI(uri.toString() + File.separator + MODULE_INDEX));
+		File packageFile = new File(new URI(uri.toString() + PATH_SEPARATOR + PACKAGE_FILE));
+		File indexFile = new File(new URI(uri.toString() + PATH_SEPARATOR + MODULE_INDEX));
 
 		try {
 			URI moduleUri = getModuleUri(jsFile, packageFile, indexFile);

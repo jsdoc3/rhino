@@ -122,6 +122,9 @@ public class Global extends ImporterTopLevel
         history = (NativeArray) cx.newArray(this, 0);
         defineProperty("history", history, ScriptableObject.DONTENUM);
 
+        // global reference to global, as in nodejs
+        defineProperty("global", this, ScriptableObject.DONTENUM);
+
         initialized = true;
     }
 
@@ -1176,6 +1179,11 @@ public class Global extends ImporterTopLevel
         String message = ToolErrorReporter.getMessage(msgId, msgArg);
         return Context.reportRuntimeError(message);
     }
+
+	@Override
+	public String getClassName() {
+        return "JavaImporter";
+	}
 }
 
 

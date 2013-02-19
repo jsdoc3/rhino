@@ -5,13 +5,13 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import org.jsdoc.SourceReader;
 import org.mozilla.javascript.commonjs.module.provider.UrlModuleSourceProvider;
 import org.mozilla.javascript.json.JsonParser;
 import org.mozilla.javascript.json.JsonParser.ParseException;
 import org.mozilla.javascript.commonjs.module.provider.ModuleSource;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.NativeObject;
-import org.mozilla.javascript.tools.SourceReader;
 
 
 /**
@@ -31,63 +31,69 @@ public class JsDocModuleProvider extends UrlModuleSourceProvider {
 	@Override
 	protected ModuleSource loadFromUri(URI uri, URI base, Object validator)
 		throws IOException, URISyntaxException {
-		URI uriWithExtension = addJsExtension(uri);
+		// We expect modules to have a ".js" file name extension ...
+		URI jsUri = ensureJsExtension(uri);
 
-		File jsFile = new File(uriWithExtension);
-		File packageFile = new File(new URI(uri.toString() + PATH_SEPARATOR + PACKAGE_FILE));
-		File indexFile = new File(new URI(uri.toString() + PATH_SEPARATOR + MODULE_INDEX));
+		URI packageUri = new URI(uri.toString() + PATH_SEPARATOR + PACKAGE_FILE);
+		URI indexUri = new URI(uri.toString() + PATH_SEPARATOR + MODULE_INDEX);
 
 		try {
-			URI moduleUri = getModuleUri(jsFile, packageFile, indexFile);
-			return loadFromActualUri(moduleUri, base, validator);
+			URI moduleUri = getModuleUri(jsUri, packageUri, indexUri);
+			ModuleSource source = loadFromActualUri(moduleUri, base, validator);
+			// ... but for compatibility we support modules without extension,
+			// or ids with explicit extension.
+			return source != null ? source : loadFromActualUri(uri, base, validator);
 		} catch (Exception e) {
 			return null;
 		}
 	}
 
-	private URI getModuleUri(File jsFile, File packageFile, File indexFile)
+	private URI getModuleUri(URI jsUri, URI packageUri, URI indexUri)
 		throws SecurityException, IOException, ParseException {
-
 		// Check for the following, in this order:
 		// 1. The file jsFile.
 		// 2. The "main" property of the JSON file packageFile.
 		// 3. The file indexFile.
-		if (jsFile.isFile()) {
-			return jsFile.toURI();
+		if (new File(jsUri).isFile()) {
+			return jsUri;
 		} 
 
-		if (packageFile.isFile()) {
-			URI packageMain = getPackageMain(packageFile);
+		if (new File(packageUri).isFile()) {
+			URI packageMain = getPackageMain(packageUri);
 			if (packageMain != null) {
 				return packageMain;
 			}
 		}
 
-		if (indexFile.isFile()) {
-			return indexFile.toURI();
+		if (new File(indexUri).isFile()) {
+			return indexUri;
 		}
 
 		// couldn't find the module URI
 		return null;
 	}
 
+	private URI getPackageMain(URI packageUri) throws IOException, ParseException {
+		return getPackageMain(new File(packageUri));
+	}
+
 	private URI getPackageMain(File packageFile) throws IOException, ParseException {
 		NativeObject packageJson = parsePackageFile(packageFile);
 		String mainFile = (String) packageJson.get("main");
 		if (mainFile != null) {
-			mainFile = addJsExtension(mainFile);
+			mainFile = ensureJsExtension(mainFile);
 			return packageFile.toURI().resolve(mainFile);
 		} else {
 			return null;
 		}
 	}
 
-	private URI addJsExtension(URI uri) throws URISyntaxException {
+	private URI ensureJsExtension(URI uri) throws URISyntaxException {
 		String str = uri.toString();
-		return new URI(addJsExtension(str));
+		return new URI(ensureJsExtension(str));
 	}
 
-	private String addJsExtension(String str) {
+	private String ensureJsExtension(String str) {
 		if (!str.endsWith(JS_EXTENSION)) {
 			str += JS_EXTENSION;
 		}

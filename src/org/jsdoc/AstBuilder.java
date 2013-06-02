@@ -844,7 +844,7 @@ public class AstBuilder
 	{
 		info.put(TYPE, JsDocNode.SWITCH_STATEMENT);
 
-		info.put("discriminant", rhinoNode.getExpression());
+		info.put("discriminant", processNode(rhinoNode.getExpression()));
 		info.put("cases", processNodeList(rhinoNode.getCases()));
 		// omitting the "lexical" property for now, as Rhino doesn't seem to provide it
 	}

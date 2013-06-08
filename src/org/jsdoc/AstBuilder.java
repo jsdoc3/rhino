@@ -125,7 +125,12 @@ public class AstBuilder
 
 		root = parser.parse(sourceCode, sourceName, 1);
 
+		// ast will be null if there are no syntax nodes
 		ast = processNode(root);
+		if (ast == null) {
+			ast = newObject();
+		}
+
 		attachRemainingComments();
 
 		return ast;
@@ -202,7 +207,12 @@ public class AstBuilder
 			node = (AstNode)node.getNext();
 		}
 
-		return node.getAbsolutePosition();
+		if (node != null) {
+			return node.getAbsolutePosition();
+		} else {
+			// no syntax nodes, just comments (or an empty file)
+			return null;
+		}
 	}
 
 	private boolean isJsDocComment(Comment comment)
@@ -243,7 +253,7 @@ public class AstBuilder
 				range = (List<Integer>)comment.get("range", comment);
 				start = range.get(0);
 
-				if (start < syntaxStart) {
+				if (syntaxStart != null && start < syntaxStart) {
 					leadingComments.add(comment);
 				} else {
 					trailingComments.add(comment);

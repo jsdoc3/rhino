@@ -902,10 +902,11 @@ public class AstBuilder
 
 		if (op == Token.INC || op == Token.DEC) {
 			info.put(TYPE, JsDocNode.UPDATE_EXPRESSION);
-			info.put("prefix", rhinoNode.isPrefix());
 		} else {
 			info.put(TYPE, JsDocNode.UNARY_EXPRESSION);
 		}
+
+		info.put("prefix", rhinoNode.isPrefix());
 
 		// work around a bug in AstNode.operatorToString()
 		if (op == Token.VOID) {

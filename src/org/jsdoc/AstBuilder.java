@@ -871,7 +871,7 @@ public class AstBuilder
 		CatchClause current;
 		AstNode finalizer = rhinoNode.getFinallyBlock();
 
-		List<AstNode> handlers = new ArrayList<AstNode>();
+		AstNode handler = null;
 		List<CatchClause> catchClauses = rhinoNode.getCatchClauses();
 		List<AstNode> guardedHandlers = new ArrayList<AstNode>();
 		Iterator<CatchClause> iterator = catchClauses.iterator();
@@ -879,7 +879,7 @@ public class AstBuilder
 		while (iterator.hasNext()) {
 			current = iterator.next();
 			if (current.getIfPosition() == -1) {
-				handlers.add(current);
+				handler = current;
 				iterator.remove();
 			} else {
 				guardedHandlers.add(current);
@@ -889,8 +889,7 @@ public class AstBuilder
 		info.put(TYPE, JsDocNode.TRY_STATEMENT);
 
 		info.put("block", processNode(rhinoNode.getTryBlock()));
-		// Esprima uses an array, so we do too
-		info.put("handlers", processNodeList(handlers));
+		info.put("handler", handler == null ? handler : processNode(handler));
 		info.put("guardedHandlers", processNodeList(guardedHandlers));
 		info.put("finalizer", finalizer == null ? finalizer : processNode(finalizer));
 	}

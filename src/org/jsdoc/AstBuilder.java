@@ -31,8 +31,6 @@ import org.mozilla.javascript.ast.*;  // we use almost every class
 public class AstBuilder
 {
 	private static final String NODE_ID = HiddenProperties.NODE_ID.getPropertyName();
-	private static final String RHINO_NODE = HiddenProperties.RHINO_NODE.getPropertyName();
-	private static final String ROOT = HiddenProperties.ROOT.getPropertyName();
 	private static final String TYPE = Properties.TYPE.getPropertyName();
 
 	private static Context cx;
@@ -40,6 +38,7 @@ public class AstBuilder
 
 	private Parser parser;
 	private NativeObject ast;
+	private Map<String, AstNode> rhinoNodes;
 	private AstRoot root;
 	private List<Comment> seenComments;
 
@@ -105,6 +104,7 @@ public class AstBuilder
 	{
 		parser = null;
 		ast = null;
+		rhinoNodes = new HashMap<String, AstNode>();
 		root = null;
 		seenComments = new ArrayList<Comment>();
 	}
@@ -112,6 +112,11 @@ public class AstBuilder
 	public NativeObject getAst()
 	{
 		return ast;
+	}
+
+	public Map<String, AstNode> getRhinoNodes()
+	{
+		return rhinoNodes;
 	}
 
 	public NativeObject build(String sourceCode, String sourceName)
@@ -276,7 +281,8 @@ public class AstBuilder
 		Integer start;
 		Integer end;
 
-		AstNode rhinoNode = (AstNode)info.get(RHINO_NODE);
+		String nodeId = (String)info.get("nodeId");
+		AstNode rhinoNode = rhinoNodes.get(nodeId);
 
 		NativeArray range = getRange(rhinoNode);
 		info.put("range", range);
@@ -285,12 +291,6 @@ public class AstBuilder
 		attachLeadingComments(rhinoNode, info);
 
 		node = new JsDocNode(info);
-
-		if (this.ast == null && info.get(TYPE) == JsDocNode.PROGRAM) {
-			node.put(ROOT, node.getNativeObject());
-		} else {
-			node.put(ROOT, this.ast);
-		}
 
 		return node.getNativeObject();
 	}
@@ -329,11 +329,12 @@ public class AstBuilder
 		//	rhinoNode.toSource());
 
 		NativeObject node = null;
+		String nodeId = getRhinoNodeId(rhinoNode);
 		Entry info = new Entry();
 		NodeTypes type = NodeTypes.valueOf(rhinoNode.shortName());
 
-		info.put(NODE_ID, getRhinoNodeId(rhinoNode));
-		info.put(RHINO_NODE, rhinoNode);
+		info.put(NODE_ID, nodeId);
+		rhinoNodes.put(nodeId, rhinoNode);
 
 		// surely there's a better way to do this...
 		switch (type) {
@@ -981,9 +982,7 @@ public class AstBuilder
 
 	enum HiddenProperties
 	{
-		RHINO_NODE ("rhinoNode"),
-		NODE_ID ("nodeId"),
-		ROOT ("root");
+		NODE_ID ("nodeId");
 
 		private String propertyName;
 
@@ -1089,11 +1088,6 @@ public class AstBuilder
 		public final void put(String key, Object value)
 		{
 			node.put(key, node, value);
-		}
-
-		public final JsDocNode getRoot()
-		{
-			return (JsDocNode)get(HiddenProperties.ROOT.getPropertyName());
 		}
 
 		public final NativeObject getNativeObject()

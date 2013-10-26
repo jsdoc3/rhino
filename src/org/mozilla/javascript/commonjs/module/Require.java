@@ -324,6 +324,18 @@ public class Require extends BaseFunction
         if(!sandboxed) {
             defineReadOnlyProperty(moduleObject, "uri", uri.toString());
         }
+
+        // To enable compatibility with Node.js, JSDoc needs a convenient way to
+        // get the current working directory (CWD) of any module without accessing
+        // module.uri. We accomplish this by changing the "user.dir" system
+        // property before we run each module script. This doesn't actually change
+        // Java's CWD, but it causes java.io.File.getAbsolutePath() to resolve
+        // filenames relative to the new value of "user.dir". We make use of this
+        // in our Rhino shim for Node.js' global "process.cwd()" method and its
+        // global "__dirname" property.
+        String oldUserDir = System.getProperty("user.dir");
+        System.setProperty("user.dir", new File(uri).getPath());
+
         final Scriptable executionScope = new ModuleScope(nativeScope, uri, base);
         // Set this so it can access the global JS environment objects.
         // This means we're currently using the "MGN" approach (ModuleScript
@@ -339,6 +351,10 @@ public class Require extends BaseFunction
         executeOptionalScript(preExec, cx, executionScope);
         moduleScript.getScript().exec(cx, executionScope);
         executeOptionalScript(postExec, cx, executionScope);
+
+        // Reset the "user.dir" property to its previous value
+        System.setProperty("user.dir", oldUserDir);
+        
         return ScriptRuntime.toObject(nativeScope,
                 ScriptableObject.getProperty(moduleObject, "exports"));
     }

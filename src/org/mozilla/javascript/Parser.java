@@ -2535,9 +2535,9 @@ public class Parser
                   // for a class factory function call -- e.g $.widget(...) from
                   // jQuery UI or $.Model("MyClass").  And it's doubtful the 
                   // comment was meant for anything else.
-                  String jsdoc = getAndResetJsDoc();
-                  if (jsdoc != null) {
-                	  f.setJsDoc(jsdoc);
+                  Comment jsdocNode = getAndResetJsDoc();
+                  if (jsdocNode != null) {
+                	  f.setJsDocNode(jsdocNode);
                   }
                   f.setLp(ts.tokenBeg - pos);
                   List<AstNode> args = argumentList();

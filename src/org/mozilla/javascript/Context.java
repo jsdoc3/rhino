@@ -2305,6 +2305,30 @@ public class Context
         return cx;
     }
 
+    /**
+     * Replaces the leading hashbang statement, if present, with a blank line.
+     * 
+     * @param sourceString The JavaScript source to process.
+     * @return The source without a leading hashbang.
+     */
+    public static String removeHashbang(String sourceString)
+    {
+        String modifiedSourceString = new String(sourceString);
+        // Support the executable script #! syntax:  If the first line begins
+        // with a '#', treat the whole line as a comment.
+        if (modifiedSourceString.length() > 0 && modifiedSourceString.charAt(0) == '#') {
+            for (int i = 1; i != modifiedSourceString.length(); ++i) {
+                int c = modifiedSourceString.charAt(i);
+                if (c == '\n' || c == '\r') {
+                    modifiedSourceString = modifiedSourceString.substring(i);
+                    break;
+                }
+            }
+        }
+
+        return modifiedSourceString;
+    }
+
     private Object compileImpl(Scriptable scope,
                                Reader sourceReader, String sourceString,
                                String sourceName, int lineno,
@@ -2332,7 +2356,9 @@ public class Context
             compilationErrorReporter = compilerEnv.getErrorReporter();
         }
 
-        if (debugger != null) {
+        // always load the source here so we can strip the hashbang
+        //if (debugger != null) {
+        if (true) {
             if (sourceReader != null) {
                 sourceString = Kit.readReader(sourceReader);
                 sourceReader = null;
@@ -2345,6 +2371,7 @@ public class Context
         }
         AstRoot ast;
         if (sourceString != null) {
+            sourceString = removeHashbang(sourceString);
             ast = p.parse(sourceString, sourceName, lineno);
         } else {
             ast = p.parse(sourceReader, sourceName, lineno);

@@ -29,9 +29,40 @@ public class JsDocModuleProvider extends UrlModuleSourceProvider {
 	}
 
 	@Override
+	protected ModuleSource loadFromPathList(String moduleId, Object validator, Iterable<URI> paths)
+		throws IOException, URISyntaxException {
+		if (paths == null) {
+			return null;
+		}
+
+		for (URI path : paths) {
+			URI moduleUri;
+
+			// Try to process the module ID as a URI, then as a filepath
+			try {
+				moduleUri = path.resolve(moduleId);
+			}
+			catch(IllegalArgumentException e) {
+				File modulePath = new File(moduleId);
+				if (modulePath.isAbsolute()) {
+					moduleUri = modulePath.toURI();
+				} else {
+					moduleUri = new File(new File(path).getAbsolutePath(), moduleId).toURI();
+				}
+			}
+
+			final ModuleSource moduleSource = loadFromUri(moduleUri, path, validator);
+			if (moduleSource != null) {
+				return moduleSource;
+			}
+		}
+		return null;
+	}
+
+	@Override
 	protected ModuleSource loadFromUri(URI uri, URI base, Object validator)
 		throws IOException, URISyntaxException {
-		// We expect modules to have a ".js" file name extension ...
+		// Add a ".js" extension if necessary
 		URI jsUri = ensureJsExtension(uri);
 
 		URI packageUri = new URI(uri.toString() + PATH_SEPARATOR + PACKAGE_FILE);
@@ -40,8 +71,8 @@ public class JsDocModuleProvider extends UrlModuleSourceProvider {
 		try {
 			URI moduleUri = getModuleUri(jsUri, packageUri, indexUri);
 			ModuleSource source = loadFromActualUri(moduleUri, base, validator);
-			// ... but for compatibility we support modules without extension,
-			// or ids with explicit extension.
+			// For compatibility, we support modules without extension, or IDs
+			// with explicit extension.
 			return source != null ? source : loadFromActualUri(uri, base, validator);
 		} catch (Exception e) {
 			return null;

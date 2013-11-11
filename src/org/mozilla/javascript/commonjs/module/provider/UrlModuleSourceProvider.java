@@ -101,7 +101,7 @@ public class UrlModuleSourceProvider extends ModuleSourceProviderBase
         return loadFromPathList(moduleId, validator, fallbackUris);
     }
 
-    private ModuleSource loadFromPathList(String moduleId,
+    protected ModuleSource loadFromPathList(String moduleId,
             Object validator, Iterable<URI> paths)
             throws IOException, URISyntaxException
     {

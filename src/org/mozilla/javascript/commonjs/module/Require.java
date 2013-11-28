@@ -320,9 +320,12 @@ public class Require extends BaseFunction
                 nativeScope);
         URI uri = moduleScript.getUri();
         URI base = moduleScript.getBase();
-        defineReadOnlyProperty(moduleObject, "id", id);
         if(!sandboxed) {
+            // Use the fully resolved path as the module ID, like Node.js
+            defineReadOnlyProperty(moduleObject, "id", new File(uri).toString());
             defineReadOnlyProperty(moduleObject, "uri", uri.toString());
+        } else {
+            defineReadOnlyProperty(moduleObject, "id", id);
         }
 
         // To enable compatibility with Node.js, JSDoc needs a convenient way to

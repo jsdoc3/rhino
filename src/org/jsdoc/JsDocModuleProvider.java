@@ -23,6 +23,7 @@ public class JsDocModuleProvider extends UrlModuleSourceProvider {
 	private static final String PATH_SEPARATOR = "/";
 	private static final String PACKAGE_FILE = "package.json";
 	private static final String MODULE_INDEX = "index" + JS_EXTENSION;
+	private static final String SUBMODULE_DIRECTORY = "node_modules";
 
 	public JsDocModuleProvider(Iterable<URI> privilegedUris, Iterable<URI> fallbackUris) {
 		super(privilegedUris, fallbackUris);
@@ -62,15 +63,11 @@ public class JsDocModuleProvider extends UrlModuleSourceProvider {
 	@Override
 	protected ModuleSource loadFromUri(URI uri, URI base, Object validator)
 		throws IOException, URISyntaxException {
-		// Add a ".js" extension if necessary
-		URI jsUri = ensureJsExtension(uri);
-
-		URI packageUri = new URI(uri.toString() + PATH_SEPARATOR + PACKAGE_FILE);
-		URI indexUri = new URI(uri.toString() + PATH_SEPARATOR + MODULE_INDEX);
-
 		try {
-			URI moduleUri = getModuleUri(jsUri, packageUri, indexUri);
+			// Start by searching for the module in the usual locations.
+			URI moduleUri = getModuleUri(uri, base);
 			ModuleSource source = loadFromActualUri(moduleUri, base, validator);
+
 			// For compatibility, we support modules without extension, or IDs
 			// with explicit extension.
 			return source != null ? source : loadFromActualUri(uri, base, validator);
@@ -79,29 +76,73 @@ public class JsDocModuleProvider extends UrlModuleSourceProvider {
 		}
 	}
 
-	private URI getModuleUri(URI jsUri, URI packageUri, URI indexUri)
-		throws SecurityException, IOException, ParseException {
+	private URI getCurrentModuleUri() throws URISyntaxException {
+		// Depends on a hack in Require
+		return new File(System.getProperty("user.dir")).toURI();
+	}
+
+	private URI getModuleUri(URI uri, URI base)
+		throws SecurityException, IOException, ParseException, URISyntaxException {
+		return getModuleUri(uri, base, true);
+	}
+
+	private URI getModuleUri(URI uri, URI base, boolean checkForSubmodules)
+		throws SecurityException, IOException, ParseException, URISyntaxException {
+		URI moduleUri = null;
+		String uriString = uri.toString();
+
+		// Add a ".js" extension if necessary
+		URI jsUri = ensureJsExtension(uri);
+
+		URI packageUri = new URI(uriString + PATH_SEPARATOR + PACKAGE_FILE);
+		URI indexUri = new URI(uriString + PATH_SEPARATOR + MODULE_INDEX);
+
 		// Check for the following, in this order:
 		// 1. The file jsFile.
 		// 2. The "main" property of the JSON file packageFile.
 		// 3. The file indexFile.
+		// 4. A submodule of the current module that matches #1, #2, or #3 (if checkForSubmodules
+		//    is true).
 		if (new File(jsUri).isFile()) {
-			return jsUri;
+			moduleUri = jsUri;
 		} 
 
-		if (new File(packageUri).isFile()) {
-			URI packageMain = getPackageMain(packageUri);
-			if (packageMain != null) {
-				return packageMain;
+		if (moduleUri == null && new File(packageUri).isFile()) {
+			moduleUri = getPackageMain(packageUri);
+		}
+
+		if (moduleUri == null && new File(indexUri).isFile()) {
+			moduleUri = indexUri;
+		}
+
+		if (moduleUri == null && checkForSubmodules) {
+			moduleUri = getSubmoduleUri(uri, base);
+		}
+
+		return moduleUri;
+	}
+
+	private URI getSubmoduleUri(URI uri, URI base)
+		throws SecurityException, IOException, ParseException, URISyntaxException {
+		URI submoduleUri = null;
+		String currentModule = getCurrentModuleUri().toString();
+
+		// Find the nearest parent module, if any.
+		int submoduleParentIndex = currentModule.lastIndexOf(SUBMODULE_DIRECTORY + PATH_SEPARATOR);
+		if (submoduleParentIndex != -1) {
+			int parentIndex = currentModule.indexOf(PATH_SEPARATOR, submoduleParentIndex +
+				SUBMODULE_DIRECTORY.length() + 1);
+			if (parentIndex != -1) {
+				String parentModule = currentModule.substring(0, parentIndex);
+				String submoduleDir = parentModule + PATH_SEPARATOR + SUBMODULE_DIRECTORY;
+
+				URI submoduleSearchUri = new URI(submoduleDir + PATH_SEPARATOR +
+					base.relativize(uri).toString());
+				submoduleUri = getModuleUri(submoduleSearchUri, base, false);
 			}
 		}
 
-		if (new File(indexUri).isFile()) {
-			return indexUri;
-		}
-
-		// couldn't find the module URI
-		return null;
+		return submoduleUri;
 	}
 
 	private URI getPackageMain(URI packageUri) throws IOException, ParseException {

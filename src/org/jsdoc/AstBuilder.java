@@ -325,9 +325,6 @@ public class AstBuilder
 
 	private NativeObject processNode(AstNode rhinoNode)
 	{
-		//System.out.println("new rhino node! shortName: " + rhinoNode.shortName() + ", source: " +
-		//	rhinoNode.toSource());
-
 		NativeObject node = null;
 		String nodeId = getRhinoNodeId(rhinoNode);
 		Entry info = new Entry();
@@ -336,7 +333,8 @@ public class AstBuilder
 		info.put(NODE_ID, nodeId);
 		rhinoNodes.put(nodeId, rhinoNode);
 
-		// surely there's a better way to do this...
+		// this is clumsy but effective. could potentially use reflection instead, at the risk of
+		// a performance hit.
 		switch (type) {
 			case ArrayComprehension:
 				processArrayComprehension((ArrayComprehension)rhinoNode, info);

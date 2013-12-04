@@ -337,7 +337,7 @@ public class Require extends BaseFunction
         // in our Rhino shim for Node.js' global "process.cwd()" method and its
         // global "__dirname" property.
         String oldUserDir = System.getProperty("user.dir");
-        System.setProperty("user.dir", new File(uri).getPath());
+        System.setProperty("user.dir", new File(uri).getParentFile().getPath());
 
         final Scriptable executionScope = new ModuleScope(nativeScope, uri, base);
         // Set this so it can access the global JS environment objects.

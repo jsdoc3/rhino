@@ -136,7 +136,13 @@ public class Global extends ImporterTopLevel
         if (modulePath != null) {
             for (String path : modulePath) {
                 try {
-                    URI uri = new URI(path);
+                    // handle both file paths and URIs
+                    URI uri;
+                    try {
+                        uri = new URI(path);
+                    } catch (URISyntaxException usx) {
+                        uri = new File(path).toURI();
+                    }
                     if (!uri.isAbsolute()) {
                         // call resolve("") to canonify the path
                         uri = new File(path).toURI().resolve("");

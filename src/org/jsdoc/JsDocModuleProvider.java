@@ -44,7 +44,15 @@ public class JsDocModuleProvider extends UrlModuleSourceProvider {
 				moduleUri = path.resolve(moduleId);
 			}
 			catch(IllegalArgumentException e) {
+				// If a directory contains foo/ and foo.js, and the code says "require('foo')",
+				// we want foo.js
 				File modulePath = new File(moduleId);
+				File modulePathJs = moduleId.endsWith(JS_EXTENSION) ? modulePath :
+					new File(moduleId + JS_EXTENSION);
+				if (modulePath.isDirectory() && modulePathJs.isFile()) {
+					modulePath = modulePathJs;
+				}
+
 				if (modulePath.isAbsolute()) {
 					moduleUri = modulePath.toURI();
 				} else {

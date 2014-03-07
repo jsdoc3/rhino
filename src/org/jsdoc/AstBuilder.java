@@ -58,6 +58,7 @@ public class AstBuilder
 		DoLoop,
 		ElementGet,
 		EmptyExpression,
+		EmptyStatement,
 		ExpressionStatement,
 		ForInLoop,
 		ForLoop,
@@ -378,6 +379,9 @@ public class AstBuilder
 			case EmptyExpression:
 				processEmptyExpression((EmptyExpression)rhinoNode, info);
 				break;
+			case EmptyStatement:
+				processEmptyStatement((EmptyStatement)rhinoNode, info);
+				break;
 			case ExpressionStatement:
 				processExpressionStatement((ExpressionStatement)rhinoNode, info);
 				break;
@@ -606,6 +610,13 @@ public class AstBuilder
 	}
 
 	private void processEmptyExpression(EmptyExpression rhinoNode, Entry info)
+	{
+		// It appears that Rhino uses this node type internally; it doesn't exist in the Mozilla
+		// Parser API. To be safe, we map it to a valid (but empty) AST node type.
+		info.put(TYPE, JsDocNode.EMPTY_STATEMENT);
+	}
+
+	private void processEmptyStatement(EmptyStatement rhinoNode, Entry info)
 	{
 		info.put(TYPE, JsDocNode.EMPTY_STATEMENT);
 	}

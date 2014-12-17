@@ -315,12 +315,12 @@ public class AstBuilder
 	{
 		List<AstNode> kids = new ArrayList<AstNode>();
 		Node current = rhinoNode.getFirstChild();
- 
+
 		while (current != null) {
 			kids.add((AstNode)current);
 			current = current.getNext();
 		}
- 
+
 		return processNodeList(kids);
 	}
 
@@ -520,7 +520,7 @@ public class AstBuilder
 			info.put(TYPE, JsDocNode.ARRAY_EXPRESSION);
 		}
 
-		info.put("elements", processNodeList(rhinoNode.getElements()));		
+		info.put("elements", processNodeList(rhinoNode.getElements()));
 	}
 
 	private void processAssignment(Assignment rhinoNode, Entry info)
@@ -1082,7 +1082,7 @@ public class AstBuilder
 		public JsDocNode(Entry info)
 		{
 			this();
-			
+
 			Set<Map.Entry<Object, Object>> entrySet = info.entrySet();
 			for (Map.Entry<Object, Object> item : entrySet) {
 				node.put((String)item.getKey(), node, item.getValue());

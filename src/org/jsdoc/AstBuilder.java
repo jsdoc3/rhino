@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import org.mozilla.javascript.CompilerEnvirons;
@@ -40,7 +41,9 @@ public class AstBuilder
 	private NativeObject ast;
 	private Map<String, AstNode> rhinoNodes;
 	private AstRoot root;
-	private List<Comment> seenComments;
+	private Map<Comment, NativeObject> comments;
+	private List<NativeObject> nativeComments;
+	private Set<Comment> seenComments;
 
 	private enum NodeTypes
 	{
@@ -107,7 +110,9 @@ public class AstBuilder
 		ast = null;
 		rhinoNodes = new HashMap<String, AstNode>();
 		root = null;
-		seenComments = new ArrayList<Comment>();
+		comments = new HashMap<Comment, NativeObject>();
+		nativeComments = new ArrayList<NativeObject>();
+		seenComments = new HashSet<Comment>();
 	}
 
 	public NativeObject getAst()
@@ -130,6 +135,7 @@ public class AstBuilder
 		parser = getParser();
 
 		root = parser.parse(sourceCode, sourceName, 1);
+		processAllComments(root);
 
 		// ast will be null if there are no syntax nodes
 		ast = processNode(root);
@@ -137,6 +143,7 @@ public class AstBuilder
 			ast = newObject();
 		}
 
+		ast.defineProperty("comments", newArray(nativeComments), ScriptableObject.EMPTY);
 		attachRemainingComments();
 
 		return ast;
@@ -228,19 +235,20 @@ public class AstBuilder
 
 	private void attachLeadingComments(AstNode rhinoNode, Entry info)
 	{
-		List<NativeObject> comments = new ArrayList<NativeObject>();
+		List<NativeObject> leadingComments = new ArrayList<NativeObject>();
 		Comment comment = rhinoNode.getJsDocNode();
 		if (comment != null) {
 			seenComments.add(comment);
-			comments.add(processNode(comment));
-			info.put("leadingComments", newArray(comments));
+
+			leadingComments.add(comments.get(comment));
+			info.put("leadingComments", newArray(leadingComments));
 		};
 	}
 
 	@SuppressWarnings("unchecked")
 	private void attachRemainingComments()
 	{
-		NativeObject comment;
+		NativeObject nativeComment;
 		List<Integer> range;
 		Integer start;
 
@@ -255,14 +263,14 @@ public class AstBuilder
 
 		for (Comment commentNode : allComments) {
 			if (seenComments.contains(commentNode) == false && isJsDocComment(commentNode)) {
-				comment = processNode(commentNode);
-				range = (List<Integer>)comment.get("range", comment);
+				nativeComment = comments.get(commentNode);
+				range = (List<Integer>)nativeComment.get("range", nativeComment);
 				start = range.get(0);
 
 				if (syntaxStart != null && start < syntaxStart) {
-					leadingComments.add(comment);
+					leadingComments.add(nativeComment);
 				} else {
-					trailingComments.add(comment);
+					trailingComments.add(nativeComment);
 				}
 			}
 		}
@@ -294,6 +302,21 @@ public class AstBuilder
 		node = new JsDocNode(info);
 
 		return node.getNativeObject();
+	}
+
+	private void processAllComments(AstRoot ast)
+	{
+		NodeVisitor visitor = new NodeVisitor() {
+			public boolean visit(AstNode node) {
+				NativeObject nativeComment = processNode(node);
+				comments.put((Comment)node, nativeComment);
+				nativeComments.add(nativeComment);
+
+				return true;
+			}
+		};
+
+		ast.visitComments(visitor);
 	}
 
 	private String getRhinoNodeId(Node rhinoNode)
@@ -362,7 +385,15 @@ public class AstBuilder
 				processCatchClause((CatchClause)rhinoNode, info);
 				break;
 			case Comment:
-				processComment((Comment)rhinoNode, info);
+				// if we've already seen this comment, use the comment object we already created
+				NativeObject nativeComment = comments.get(rhinoNode);
+
+				if (nativeComment != null) {
+					node = nativeComment;
+				} else {
+					processComment((Comment)rhinoNode, info);
+				}
+
 				break;
 			case ConditionalExpression:
 				processConditionalExpression((ConditionalExpression)rhinoNode, info);

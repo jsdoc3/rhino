@@ -216,7 +216,14 @@ public class BaseFunction extends IdScriptableObject implements Function
         initPrototypeMethod(FUNCTION_TAG, id, s, arity);
     }
 
-    static boolean isApply(IdFunctionObject f) {
+    @Override
+    protected void setInstanceIdAttributes(int id, int attr) {
+        if (id == Id_prototype) {
+        	prototypePropertyAttributes = prototypePropertyAttributes | attr;
+        }
+    }
+
+   static boolean isApply(IdFunctionObject f) {
         return f.hasTag(FUNCTION_TAG) && f.methodId() == Id_apply;
     }
 

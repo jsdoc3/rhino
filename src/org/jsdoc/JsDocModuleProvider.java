@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import org.jsdoc.SourceReader;
 import org.mozilla.javascript.commonjs.module.provider.UrlModuleSourceProvider;
 import org.mozilla.javascript.json.JsonParser;
@@ -19,6 +18,8 @@ import org.mozilla.javascript.NativeObject;
  * @author Jeff Williams
  */
 public class JsDocModuleProvider extends UrlModuleSourceProvider {
+	private static final long serialVersionUID = -5866044743536013761L;
+
 	private static final String JS_EXTENSION = ".js";
 	private static final String PATH_SEPARATOR = "/";
 	private static final String PACKAGE_FILE = "package.json";

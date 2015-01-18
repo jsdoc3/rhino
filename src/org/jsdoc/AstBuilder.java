@@ -13,7 +13,6 @@ import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.Node;
 import org.mozilla.javascript.Parser;
-import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Token;
 import org.mozilla.javascript.Undefined;
@@ -287,8 +286,6 @@ public class AstBuilder
 	private NativeObject createNode(Entry info)
 	{
 		JsDocNode node;
-		Integer start;
-		Integer end;
 
 		String nodeId = (String)info.get("nodeId");
 		AstNode rhinoNode = rhinoNodes.get(nodeId);
@@ -1136,8 +1133,9 @@ public class AstBuilder
 		}
 	}
 
+	// just for convenience
 	class Entry extends HashMap<Object, Object>
 	{
-		// just for convenience
+		private static final long serialVersionUID = -2407765489150389060L;
 	}
 }

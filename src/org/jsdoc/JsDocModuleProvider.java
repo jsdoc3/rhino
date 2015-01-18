@@ -21,6 +21,7 @@ public class JsDocModuleProvider extends UrlModuleSourceProvider {
 	private static final long serialVersionUID = -5866044743536013761L;
 
 	private static final String JS_EXTENSION = ".js";
+	private static final String JSON_EXTENSION = ".json";
 	private static final String PATH_SEPARATOR = "/";
 	private static final String PACKAGE_FILE = "package.json";
 	private static final String MODULE_INDEX = "index" + JS_EXTENSION;
@@ -175,7 +176,7 @@ public class JsDocModuleProvider extends UrlModuleSourceProvider {
 	}
 
 	private String ensureJsExtension(String str) {
-		if (!str.endsWith(JS_EXTENSION)) {
+		if (!str.endsWith(JS_EXTENSION) && !str.endsWith(JSON_EXTENSION)) {
 			str += JS_EXTENSION;
 		}
 		return str;

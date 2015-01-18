@@ -2372,6 +2372,10 @@ public class Context
         AstRoot ast;
         if (sourceString != null) {
             sourceString = removeHashbang(sourceString);
+            // HACK: handle JSON files loaded with require()
+            if (sourceName.endsWith(".json")) {
+            	sourceString = "module.exports = " + sourceString;
+            }
             ast = p.parse(sourceString, sourceName, lineno);
         } else {
             ast = p.parse(sourceReader, sourceName, lineno);

@@ -110,7 +110,7 @@ public class JsDocModuleProvider extends UrlModuleSourceProvider {
 		// 1. The file jsFile.
 		// 2. The "main" property of the JSON file packageFile.
 		// 3. The file indexFile.
-		// 4. A submodule of the current module that matches #1, #2, or #3 (if checkForSubmodules
+		// 4. A node_modules directory that matches #1, #2, or #3 (if checkForSubmodules
 		//    is true).
 		if (new File(jsUri).isFile()) {
 			moduleUri = jsUri;
@@ -133,32 +133,21 @@ public class JsDocModuleProvider extends UrlModuleSourceProvider {
 
 	private URI getSubmoduleUri(URI uri, URI base)
 		throws SecurityException, IOException, ParseException, URISyntaxException {
+		URI currentModuleUri = getCurrentModuleUri();
+		String childSubmoduleDir = null;
+		String relativeModuleUriString = base.relativize(uri).toString();
 		URI submoduleUri = null;
-		String currentModule = getCurrentModuleUri().toString();
 		
-		// Find the child submodule, if any.
-		URI childSubmoduleUri = new URI(currentModule + SUBMODULE_DIRECTORY);
-		File childSubmoduleDir = new File(childSubmoduleUri);
-
-		if (childSubmoduleDir.isDirectory()) {
-			submoduleUri = getModuleUri(new URI(childSubmoduleUri.toString() + PATH_SEPARATOR +
-				base.relativize(uri).toString()), childSubmoduleUri, false);
-		}
-		
-		if (submoduleUri == null) {
-			// Find the nearest parent module, if any.
-			int submoduleParentIndex = currentModule.lastIndexOf(SUBMODULE_DIRECTORY + PATH_SEPARATOR);
-			if (submoduleParentIndex != -1) {
-				int parentIndex = currentModule.indexOf(PATH_SEPARATOR, submoduleParentIndex +
-					SUBMODULE_DIRECTORY.length() + 1);
-				if (parentIndex != -1) {
-					String parentModule = currentModule.substring(0, parentIndex);
-					String submoduleDir = parentModule + PATH_SEPARATOR + SUBMODULE_DIRECTORY;
-
-					URI submoduleSearchUri = new URI(submoduleDir + PATH_SEPARATOR +
-						base.relativize(uri).toString());
-					submoduleUri = getModuleUri(submoduleSearchUri, base, false);
-				}
+		// Search for node_modules directories, walking back up to the file system root.
+		while (currentModuleUri != null && submoduleUri == null) {
+			childSubmoduleDir = new File(currentModuleUri.toString() + PATH_SEPARATOR +
+				SUBMODULE_DIRECTORY).toString();
+			submoduleUri = getModuleUri(new URI(childSubmoduleDir + PATH_SEPARATOR +
+				relativeModuleUriString), new URI(childSubmoduleDir), false);
+			
+			if (submoduleUri == null) {
+				String currentModuleDir = new File(currentModuleUri.toString()).getParent();
+				currentModuleUri = new URI(currentModuleDir);
 			}
 		}
 

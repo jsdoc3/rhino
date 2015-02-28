@@ -597,7 +597,9 @@ public class AstBuilder
 		info.put(TYPE, JsDocNode.BLOCK);
 
 		// Esprima provides the comment value without delimiters, so we do too
-		info.put("value", comment.substring(2, Math.max(0, comment.length() - 2)));
+		info.put("value", comment.length() > 2 ?
+			comment.substring(2) :
+			"");
 		// Esprima doesn't provide this, but it's useful
 		info.put("raw", rhinoNode.getValue());
 	}
